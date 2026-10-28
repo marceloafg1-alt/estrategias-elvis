@@ -239,8 +239,6 @@ button, input, textarea { font: inherit; color: inherit; }
 .installX:hover { background: rgba(255, 255, 255, .18); }
 .tourInstall { margin-top: 12px; }
 .tourInstall[hidden] { display: none; }
-.tourNoShow { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 13.5px; color: var(--ink-2); cursor: pointer; }
-.tourNoShow input { width: 16px; height: 16px; accent-color: var(--accent); margin: 0; }
 .toast { position: fixed; left: 50%; bottom: calc(132px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--surface); padding: 9px 16px; border-radius: 999px; font-size: 13px; z-index: 60; box-shadow: 0 8px 24px var(--shadow); }
 .toast[hidden] { display: none; }
 
@@ -372,7 +370,6 @@ button, input, textarea { font: inherit; color: inherit; }
     <p class="tourText" id="tourText"></p>
     <div class="tourDots" id="tourDots"></div>
     <button class="btn solid tourInstall" id="tourInstall" hidden>Instalar agora</button>
-    <label class="tourNoShow"><input type="checkbox" id="tourNoShow"> Não mostrar na próxima vez</label>
     <div class="tourActions">
       <button class="btn ghost" id="tourSkip">Pular</button>
       <span class="grow"></span>
@@ -492,7 +489,7 @@ if (!pdfjs) { $("loading").textContent = "Não foi possível carregar o leitor. 
 pdfjs.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
 const stage = $("stage"), pageEl = $("page"), canvas = $("canvas"), textEl = $("text"), marksEl = $("marks");
-let pdf = null, cur = 1, zoom = 1, renderTask = null, renderSeq = 0;
+let pdf = null, cur = clamp(+store.last || 1, 1, PAGES), zoom = 1, renderTask = null, renderSeq = 0;
 const textCache = {}, boxCache = {};
 
 pdfjs.getDocument({ data: base64ToBytes(PDF_B64) }).promise.then(doc => {
@@ -1031,11 +1028,10 @@ function tourShow(i) {
   const card = document.querySelector(".tourCard");
   card.style.top = Math.max(16, innerHeight / 2 - card.offsetHeight / 2) + "px";
 }
-function tourOpen() { $("tourNoShow").checked = false; tour.hidden = false; tourShow(0); }
+function tourOpen() { tour.hidden = false; tourShow(0); }
 function tourClose() {
   tour.hidden = true;
-  const hide = $("tourNoShow").checked;
-  try { if (hide) localStorage.setItem("elvis-tour-hide", "1"); else localStorage.removeItem("elvis-tour-hide"); } catch (e) {}
+  try { localStorage.setItem("elvis-tour-done", "1"); } catch (e) {}
 }
 $("tourBtn").onclick = tourOpen;
 $("tourNext").onclick = () => (tourIdx >= TOUR_STEPS.length - 1 ? tourClose() : tourShow(tourIdx + 1));
@@ -1048,9 +1044,9 @@ document.addEventListener("keydown", e => {
   else if (e.key === "ArrowRight") tourShow(tourIdx + 1);
   else if (e.key === "ArrowLeft") tourShow(tourIdx - 1);
 });
-let hideTour = false;
-try { hideTour = localStorage.getItem("elvis-tour-hide") === "1"; } catch (e) {}
-if (!hideTour) setTimeout(tourOpen, 900);
+let seenTour = false;
+try { seenTour = localStorage.getItem("elvis-tour-done") === "1"; } catch (e) {}
+if (!seenTour) setTimeout(tourOpen, 900);
 
 /* ---------- backup ---------- */
 $("exportBtn").onclick = () => {
