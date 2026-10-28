@@ -1,4 +1,4 @@
-const CACHE = "elvis-livro-v3";
+const CACHE = "elvis-livro-v4";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 const LIBS = [
   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
