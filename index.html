@@ -513,11 +513,17 @@ pdfjs.getDocument({ data: base64ToBytes(PDF_B64) }).promise.then(doc => {
   render(cur, 0);
 }).catch(() => { $("loading").textContent = "Não foi possível abrir o livro. Recarregue a página."; });
 
-function fitScale(base) {
+function stageInner() {
   const cs = getComputedStyle(stage);
-  const w = stage.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-  const h = stage.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
-  return Math.max(0.2, Math.min(w / base.width, h / base.height)) || 1;
+  return {
+    w: stage.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight),
+    h: stage.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom),
+  };
+}
+
+function fitScale(base, fill) {
+  const { w, h } = stageInner();
+  return Math.max(0.2, fill ? w / base.width : Math.min(w / base.width, h / base.height)) || 1;
 }
 
 /* Image positions come from the page's drawing operations, as fractions of the page,
@@ -564,8 +570,14 @@ async function render(n, dir) {
   const page = await pdf.getPage(n);
   if (seq !== renderSeq) return;
   const base = page.getViewport({ scale: 1 });
-  const scale = fitScale(base) * zoom;
+  // Full-screen reading: keep the width fitted and stretch the page down to the full height of the screen.
+  const fill = document.body.classList.contains("focus") && zoom === 1;
+  const scale = fitScale(base, fill) * zoom;
   const vp = page.getViewport({ scale });
+  if (fill) {
+    const sy = stageInner().h / vp.height;
+    if (sy > 1) { vp.transform[3] *= sy; vp.transform[5] *= sy; vp.height *= sy; }
+  }
   let ratio = window.devicePixelRatio || 1;
   const maxPx = 14e6;
   if (vp.width * vp.height * ratio * ratio > maxPx) ratio = Math.sqrt(maxPx / (vp.width * vp.height));
