@@ -3,7 +3,6 @@
 <head>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#2350c4">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta charset="utf-8">
@@ -215,6 +214,16 @@ button, input, textarea { font: inherit; color: inherit; }
 .tourActions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .tourActions .grow { flex: 1; }
 .tourActions .btn { height: 36px; }
+.installBar {
+  position: fixed; z-index: 45; top: max(10px, env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%);
+  width: min(560px, calc(100vw - 24px)); display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 16px;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 12px 34px var(--shadow);
+}
+.installBar[hidden] { display: none; }
+.installBar span { flex: 1; font-size: 14px; line-height: 1.35; }
+.installBar .btn { height: 34px; }
+.tourInstall { margin-top: 12px; }
+.tourInstall[hidden] { display: none; }
 .toast { position: fixed; left: 50%; bottom: calc(132px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--surface); padding: 9px 16px; border-radius: 999px; font-size: 13px; z-index: 60; box-shadow: 0 8px 24px var(--shadow); }
 .toast[hidden] { display: none; }
 
@@ -331,6 +340,11 @@ button, input, textarea { font: inherit; color: inherit; }
     <button class="btn ghost" id="lbClose">Fechar</button>
   </div>
 </div>
+<div class="installBar" id="installBar" hidden>
+  <span>Instale o livro na tela inicial para abrir como app.</span>
+  <button class="btn solid" id="installNow">Instalar</button>
+  <button class="btn ghost" id="installLater" aria-label="Fechar">✕</button>
+</div>
 <div class="tour" id="tour" hidden>
   <div class="tourHole" id="tourHole"></div>
   <div class="tourCard" role="dialog" aria-modal="true" aria-labelledby="tourTitle">
@@ -338,6 +352,7 @@ button, input, textarea { font: inherit; color: inherit; }
     <h3 id="tourTitle"></h3>
     <p class="tourText" id="tourText"></p>
     <div class="tourDots" id="tourDots"></div>
+    <button class="btn solid tourInstall" id="tourInstall" hidden>Instalar agora</button>
     <div class="tourActions">
       <button class="btn ghost" id="tourSkip">Pular</button>
       <span class="grow"></span>
@@ -930,7 +945,41 @@ document.querySelectorAll("[data-close]").forEach(b => b.onclick = closeDrawers)
 // Detect the device once: touch screens (phones, tablets) get swipe and tap hints; computers get mouse and keyboard hints.
 const IS_TOUCH = matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
 document.documentElement.classList.toggle("is-touch", IS_TOUCH);
+const UA = navigator.userAgent;
+const IS_IOS = /iPhone|iPad|iPod/.test(UA) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const IS_ANDROID = /Android/.test(UA);
+const IS_SAFARI = /Safari/.test(UA) && !/Chrome|CriOS|FxiOS|Edg/.test(UA);
+const IS_STANDALONE = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+function installHint() {
+  if (IS_IOS) return IS_SAFARI
+    ? 'No iPhone, toque no botão Compartilhar (quadrado com seta para cima, na barra de baixo) e escolha "Adicionar à Tela de Início".'
+    : 'No iPhone, abra este link no Safari. Depois toque em Compartilhar e em "Adicionar à Tela de Início".';
+  if (IS_ANDROID) return 'No Chrome, toque nos três pontinhos (⋮) no canto superior e escolha "Instalar app" ou "Adicionar à tela inicial".';
+  if (IS_SAFARI) return 'No Mac, no Safari, escolha Arquivo e depois "Adicionar ao Dock".';
+  return 'No Chrome ou Edge, clique no ícone de instalar (uma tela com uma seta) na barra de endereço, ou em ⋮ e "Instalar Estratégias Elvis".';
+}
+let deferredInstall = null;
+const installBar = $("installBar");
+window.addEventListener("beforeinstallprompt", e => {
+  e.preventDefault();
+  deferredInstall = e;
+  if (!IS_STANDALONE) installBar.hidden = false;
+  if (!tour.hidden) tourShow(tourIdx);
+});
+window.addEventListener("appinstalled", () => { deferredInstall = null; installBar.hidden = true; toast("App instalado"); });
+async function runInstall() {
+  if (!deferredInstall) return;
+  deferredInstall.prompt();
+  try { await deferredInstall.userChoice; } catch (e) {}
+  deferredInstall = null; installBar.hidden = true;
+  if (!tour.hidden) tourShow(tourIdx);
+}
+$("installNow").onclick = runInstall;
+$("tourInstall").onclick = runInstall;
+$("installLater").onclick = () => { installBar.hidden = true; };
+
 const TOUR_STEPS = [
+  { sel: null, install: true, title: "Instale como app", text: "Assim o livro abre em tela cheia, como um aplicativo, e funciona sem internet. " + installHint() },
   { sel: "#page", title: "Vire as páginas", text: IS_TOUCH ? "Deslize o dedo para a direita para ir à próxima página e para a esquerda para voltar. Também dá para tocar nas laterais da página ou usar a barra inferior." : "Clique na metade direita da página para ir à próxima e na esquerda para voltar. Também funcionam as setas do teclado e a barra inferior." },
   { sel: "#page", title: "Amplie as imagens", text: "Toque em uma imagem do livro para vê-la em tela cheia. Use + e − para ampliar mais, toque na imagem para alternar o tamanho e feche com Fechar, Esc ou tocando fora dela." },
   { sel: "#stage", title: "Marque trechos", text: "Selecione um texto com o dedo ou o mouse. Uma barra de cores aparece embaixo: escolha a cor e o trecho fica marcado. Toque numa marcação para apagá-la." },
@@ -944,6 +993,7 @@ function tourShow(i) {
   tourIdx = clamp(i, 0, TOUR_STEPS.length - 1);
   const st = TOUR_STEPS[tourIdx];
   $("tourStep").textContent = "Passo " + (tourIdx + 1) + " de " + TOUR_STEPS.length;
+  $("tourInstall").hidden = !(st.install && deferredInstall);
   $("tourTitle").textContent = st.title;
   $("tourText").textContent = st.text;
   $("tourDots").innerHTML = TOUR_STEPS.map((_, k) => `<i class="${k === tourIdx ? "on" : ""}"></i>`).join("");
