@@ -70,9 +70,21 @@ button, input, textarea { font: inherit; color: inherit; }
   padding-block: 10px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
 .title { display: flex; flex-direction: column; min-width: 0; margin-right: auto; }
-.title b { font-family: var(--font-serif); font-weight: 500; font-size: 19px; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.top { flex-wrap: nowrap; }
+.title b { font-family: var(--font-serif); font-weight: 500; font-size: 17px; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .title span { font-size: 12px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tools { display: flex; align-items: center; gap: 6px; }
+.tools { display: flex; align-items: center; gap: 6px; flex: none; }
+.iconBtn { min-width: 34px; width: 34px; padding: 0; }
+.iconBtn svg { width: 17px; height: 17px; }
+.exitFull {
+  display: none; position: fixed; z-index: 65; top: max(10px, env(safe-area-inset-top, 0px)); right: max(10px, env(safe-area-inset-right, 0px));
+  width: 38px; height: 38px; border: 0; border-radius: 50%; place-items: center; cursor: pointer;
+  background: rgba(20, 26, 40, .55); color: #fff; backdrop-filter: blur(6px);
+}
+.exitFull svg { width: 18px; height: 18px; }
+body.focus .top, body.focus .bottom { display: none; }
+body.focus .exitFull { display: grid; }
+body.focus .stage { padding-top: 12px; padding-bottom: 12px; }
 .seg { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: var(--surface-2); }
 .btn {
   border: 0; background: transparent; border-radius: 999px; height: 34px; min-width: 34px; padding: 0 12px;
@@ -83,7 +95,7 @@ button, input, textarea { font: inherit; color: inherit; }
 .btn.ghost { border: 1px solid var(--line); background: var(--surface); }
 .btn svg { width: 18px; height: 18px; flex: none; }
 .pct { font-family: var(--font-mono); font-size: 12px; min-width: 52px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
-@media (max-width: 620px) { .btn .lbl { display: none; } .btn { padding: 0 9px; } .title span { display: none; } }
+@media (max-width: 620px) { .title span { display: none; } .top { gap: 8px; padding-inline: 10px; } .tools { gap: 4px; } .pct { min-width: 44px; font-size: 11.5px; } .seg .btn { padding: 0 6px; } }
 
 /* ---------- stage ---------- */
 .main { flex: 1; min-height: 0; position: relative; display: flex; overflow: hidden; }
@@ -239,6 +251,7 @@ button, input, textarea { font: inherit; color: inherit; }
 .installX:hover { background: rgba(255, 255, 255, .18); }
 .tourInstall { margin-top: 12px; }
 .tourInstall[hidden] { display: none; }
+
 .toast { position: fixed; left: 50%; bottom: calc(132px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--surface); padding: 9px 16px; border-radius: 999px; font-size: 13px; z-index: 60; box-shadow: 0 8px 24px var(--shadow); }
 .toast[hidden] { display: none; }
 
@@ -262,24 +275,23 @@ button, input, textarea { font: inherit; color: inherit; }
 </style>
 
 <header class="top">
-  <button class="btn ghost" id="tocBtn" aria-label="Sumário">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span class="lbl">Sumário</span>
-  </button>
+  <button class="btn ghost iconBtn" id="tocBtn" aria-label="Sumário" title="Sumário">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></button>
   <div class="title"><b>Estratégias Elvis</b><span>Caminho da consistência</span></div>
   <div class="tools">
     <div class="seg" role="group" aria-label="Zoom">
-      <button class="btn" id="zOut" aria-label="Diminuir zoom" title="Diminuir zoom (−)">
+      <button class="btn iconBtn" id="zOut" aria-label="Diminuir zoom" title="Diminuir zoom (−)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
       <button class="btn pct" id="zFit" title="Voltar ao tamanho da tela (0)">100%</button>
-      <button class="btn" id="zIn" aria-label="Aumentar zoom" title="Aumentar zoom (+)">
+      <button class="btn iconBtn" id="zIn" aria-label="Aumentar zoom" title="Aumentar zoom (+)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5v14"/></svg></button>
     </div>
-    <button class="btn ghost" id="tourBtn" aria-label="Guia de uso" title="Guia de uso">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><path d="M12 17.5h.01"/></svg><span class="lbl">Guia</span>
-    </button>
-    <button class="btn ghost" id="marksBtn" aria-label="Marcações e notas">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l-5 5v4h4l5-5"/><path d="M14 6l4 4M12 8l6-6 4 4-6 6z"/></svg><span class="lbl">Marcações</span>
-    </button>
+    <button class="btn ghost iconBtn" id="tourBtn" aria-label="Guia de uso" title="Guia de uso">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><path d="M12 17.5h.01"/></svg></button>
+    <button class="btn ghost iconBtn" id="marksBtn" aria-label="Marcações e notas" title="Marcações e notas">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l-5 5v4h4l5-5"/><path d="M14 6l4 4M12 8l6-6 4 4-6 6z"/></svg></button>
+    <button class="btn ghost iconBtn" id="fullBtn" aria-label="Tela cheia" title="Tela cheia">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
   </div>
 </header>
 
@@ -370,6 +382,7 @@ button, input, textarea { font: inherit; color: inherit; }
     <p class="tourText" id="tourText"></p>
     <div class="tourDots" id="tourDots"></div>
     <button class="btn solid tourInstall" id="tourInstall" hidden>Instalar agora</button>
+
     <div class="tourActions">
       <button class="btn ghost" id="tourSkip">Pular</button>
       <span class="grow"></span>
@@ -378,6 +391,8 @@ button, input, textarea { font: inherit; color: inherit; }
     </div>
   </div>
 </div>
+<button class="exitFull" id="exitFull" aria-label="Sair da tela cheia" title="Sair da tela cheia">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
 <div class="toast" id="toast" hidden></div>
 
 <script>
@@ -718,7 +733,10 @@ document.addEventListener("keydown", e => {
   else if (e.key === "+" || e.key === "=") setZoom(zoom + 0.25);
   else if (e.key === "-") setZoom(zoom - 0.25);
   else if (e.key === "0") setZoom(1);
-  else if (e.key === "Escape") { closeDrawers(); hidePops(); }
+  else if (e.key === "Escape") {
+    if (document.body.classList.contains("focus")) setFocus(false);
+    else { closeDrawers(); hidePops(); }
+  }
   else if (e.key === "Home") go(1);
   else if (e.key === "End" && pdf) go(pdf.numPages);
 });
@@ -1047,6 +1065,19 @@ document.addEventListener("keydown", e => {
 let seenTour = false;
 try { seenTour = localStorage.getItem("elvis-tour-done") === "1"; } catch (e) {}
 if (!seenTour) setTimeout(tourOpen, 900);
+
+/* ---------- reading mode (full screen, text only) ---------- */
+function setFocus(on) {
+  document.body.classList.toggle("focus", on);
+  if (on && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
+  if (!on && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+  setTimeout(() => render(cur, 0), 80);
+}
+$("fullBtn").onclick = () => setFocus(true);
+$("exitFull").onclick = () => setFocus(false);
+document.addEventListener("fullscreenchange", () => {
+  if (!document.fullscreenElement && document.body.classList.contains("focus")) setFocus(false);
+});
 
 /* ---------- backup ---------- */
 $("exportBtn").onclick = () => {
