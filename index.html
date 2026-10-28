@@ -494,7 +494,7 @@ if (!pdfjs) { $("loading").textContent = "Não foi possível carregar o leitor. 
 pdfjs.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
 const stage = $("stage"), pageEl = $("page"), canvas = $("canvas"), textEl = $("text"), marksEl = $("marks"), innerEl = $("inner");
-let pdf = null, cur = clamp(+store.last || 1, 1, PAGES), zoom = 1, renderTask = null, renderSeq = 0;
+let pdf = null, cur = 1, zoom = 1, renderTask = null, renderSeq = 0;
 const textCache = {}, boxCache = {};
 
 pdfjs.getDocument({ data: base64ToBytes(PDF_B64) }).promise.then(doc => {
@@ -1003,34 +1003,36 @@ async function runInstall() {
   deferredInstall = null; installBar.hidden = true;
   if (!tour.hidden) tourShow(tourIdx);
 }
-$("installNow").onclick = runInstall;
-$("tourInstall").onclick = runInstall;
+$("installNow").onclick = () => (deferredInstall ? runInstall() : tourOpen());
+$("tourInstall").onclick = () => (deferredInstall ? runInstall() : toast(IS_IOS ? "Toque em Compartilhar e depois em Adicionar à Tela de Início" : "Use o menu ⋮ do navegador, como mostrado acima"));
 $("installLater").onclick = () => { installBar.hidden = true; dismissedInstall = true; try { localStorage.setItem("elvis-install-dismissed", "1"); } catch (e) {} };
 let dismissedInstall = false;
 try { dismissedInstall = localStorage.getItem("elvis-install-dismissed") === "1"; } catch (e) {}
-if (IS_IOS && IS_SAFARI && !IS_STANDALONE && !dismissedInstall) {
-  $("installHint").textContent = "Toque em Compartilhar e depois em \"Adicionar à Tela de Início\".";
-  $("installNow").disabled = true;
+if (IS_IOS && !IS_STANDALONE && !dismissedInstall) {
+  $("installHint").textContent = IS_SAFARI ? "Toque em Compartilhar e depois em \"Adicionar à Tela de Início\"." : "Abra este link no Safari para instalar.";
   installBar.hidden = false;
 }
 
-const TOUR_STEPS = [
-  { sel: null, install: true, title: "Instale no Chrome (Android)", text: "Assim o livro abre em tela cheia, como um aplicativo, e funciona sem internet. Abra este link no Chrome, toque nos três pontinhos (⋮) no canto superior e escolha \"Instalar app\" ou \"Adicionar à tela inicial\"." },
-  { sel: null, title: "Instale no Safari (iPhone)", text: "Abra este link no Safari. Toque no botão Compartilhar (quadrado com seta para cima, na barra de baixo), role a lista e escolha \"Adicionar à Tela de Início\". Depois toque em Adicionar, no canto superior direito." },
-  { sel: null, title: "Instale no computador", text: "No Chrome ou no Edge, clique no ícone de instalar (uma tela com uma seta) na barra de endereço. No Safari do Mac, escolha Arquivo e depois \"Adicionar ao Dock\"." },
-  { sel: "#page", title: "Vire as páginas", text: IS_TOUCH ? "Deslize o dedo para a direita para ir à próxima página e para a esquerda para voltar. Também dá para tocar nas laterais da página ou usar a barra inferior." : "Clique na metade direita da página para ir à próxima e na esquerda para voltar. Também funcionam as setas do teclado e a barra inferior." },
+const LESSON_CHROME = { sel: null, install: true, title: "Instale no Chrome (Android)", text: "Assim o livro abre em tela cheia, como um aplicativo, e funciona sem internet. Abra este link no Chrome, toque nos três pontinhos (⋮) no canto superior e escolha \"Instalar app\" ou \"Adicionar à tela inicial\"." };
+const LESSON_SAFARI = { sel: null, install: true, title: "Instale no Safari (iPhone)", text: "Abra este link no Safari. Toque no botão Compartilhar (quadrado com seta para cima, na barra de baixo), role a lista e escolha \"Adicionar à Tela de Início\". Depois toque em Adicionar, no canto superior direito." };
+const LESSON_DESKTOP = { sel: null, install: true, title: "Instale no computador", text: "No Chrome ou no Edge, clique no ícone de instalar (uma tela com uma seta) na barra de endereço. No Safari do Mac, escolha Arquivo e depois \"Adicionar ao Dock\"." };
+const USAGE_STEPS = [
+  { sel: "#page", title: "Vire as páginas", text: IS_TOUCH ? "Deslize o dedo para a esquerda para ir à próxima página e para a direita para voltar. Também dá para tocar nas laterais da página ou usar a barra inferior." : "Clique na metade direita da página para ir à próxima e na esquerda para voltar. Também funcionam as setas do teclado e a barra inferior." },
   { sel: "#stage", title: "Marque trechos", text: "Selecione um texto com o dedo ou o mouse. Uma barra de cores aparece embaixo: escolha a cor e o trecho fica marcado. Toque numa marcação para apagá-la." },
   { sel: "#marksBtn", title: "Notas e backup", text: "Em Marcações você escreve notas por página e vê todos os trechos marcados. Exporte um backup de vez em quando para não perder nada." },
   { sel: "#tocBtn", title: "Sumário", text: "Vá direto a qualquer capítulo pelo sumário." },
   { sel: "#zIn", title: "Zoom", text: IS_TOUCH ? "Use + e − ou aproxime dois dedos na tela para ampliar o texto." : "Use + e − ou segure Ctrl e role a roda do mouse para ampliar o texto." }
 ];
+// The first page of the tour teaches the install for this device; the other lessons follow it.
+const PLATFORM_LESSON = IS_IOS ? LESSON_SAFARI : IS_ANDROID ? LESSON_CHROME : LESSON_DESKTOP;
+const TOUR_STEPS = [PLATFORM_LESSON, ...[LESSON_CHROME, LESSON_SAFARI, LESSON_DESKTOP].filter(l => l !== PLATFORM_LESSON), ...USAGE_STEPS];
 let tourIdx = 0;
 const tour = $("tour");
 function tourShow(i) {
   tourIdx = clamp(i, 0, TOUR_STEPS.length - 1);
   const st = TOUR_STEPS[tourIdx];
   $("tourStep").textContent = "Passo " + (tourIdx + 1) + " de " + TOUR_STEPS.length;
-  $("tourInstall").hidden = !(st.install && deferredInstall);
+  $("tourInstall").hidden = !st.install;
   $("tourTitle").textContent = st.title;
   $("tourText").textContent = st.text;
   $("tourDots").innerHTML = TOUR_STEPS.map((_, k) => `<i class="${k === tourIdx ? "on" : ""}"></i>`).join("");
