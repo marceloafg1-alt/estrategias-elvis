@@ -631,7 +631,7 @@ const next = () => go(cur + 1), prev = () => go(cur - 1);
 
 /* ---------- zoom ---------- */
 function setZoom(z, anchor) {
-  z = clamp(Math.round(z * 20) / 20, 1, 4);
+  z = clamp(Math.round(z * 20) / 20, 0.5, 4);
   if (z === zoom) return;
   const r = stage.getBoundingClientRect();
   const ax = anchor ? anchor.x - r.left : stage.clientWidth / 2;
@@ -680,7 +680,7 @@ stage.addEventListener("pointermove", e => {
   if (pts.has(e.pointerId)) pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (pinching && pts.size >= 2) {
     const [a, b] = [...pts.values()];
-    pinchZ = clamp(zoom * Math.hypot(a.x - b.x, a.y - b.y) / pinchStart.d, 1, 4);
+    pinchZ = clamp(zoom * Math.hypot(a.x - b.x, a.y - b.y) / pinchStart.d, 0.5, 4);
     pageEl.style.transform = `scale(${pinchZ / zoom})`;
     pageEl.style.transformOrigin = "50% 50%";
     return;
@@ -706,11 +706,11 @@ function endPointer(e) {
   if (sel && !sel.isCollapsed && String(sel).trim()) return;
   const touchLike = gg.type !== "mouse";
   // swipe: left goes forward a page, right goes back
-  if (touchLike && zoom === 1 && Math.abs(dx) > 60 && Math.abs(dx) > 1.5 * Math.abs(dy) && dt < 800) {
+  if (touchLike && zoom <= 1 && Math.abs(dx) > 60 && Math.abs(dx) > 1.5 * Math.abs(dy) && dt < 800) {
     dx < 0 ? next() : prev();
     return;
   }
-  if (Math.hypot(dx, dy) > 8 || dt > 700 || zoom !== 1) return;
+  if (Math.hypot(dx, dy) > 8 || dt > 700 || zoom > 1) return;
   const hl = markAt(e.clientX, e.clientY);
   if (hl) { showMarkPop(hl); return; }
   const r = stage.getBoundingClientRect();
