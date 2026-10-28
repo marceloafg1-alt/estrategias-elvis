@@ -92,7 +92,7 @@ button, input, textarea { font: inherit; color: inherit; }
 .main { flex: 1; min-height: 0; position: relative; display: flex; overflow: hidden; }
 .stage {
   flex: 1; overflow: auto; position: relative; display: flex; touch-action: none;
-  padding: 24px max(12px, env(safe-area-inset-left, 0px)) 24px max(12px, env(safe-area-inset-right, 0px));
+  padding: 24px 0;
 }
 .stage.zoomed { touch-action: pan-x pan-y; }
 .sheet { margin: auto; flex: none; }
@@ -503,9 +503,11 @@ pdfjs.getDocument({ data: base64ToBytes(PDF_B64) }).promise.then(doc => {
   render(cur, 0);
 }).catch(() => { $("loading").textContent = "Não foi possível abrir o livro. Recarregue a página."; });
 
+const INSET = 12; // about 2 mm between the text and the edge of the screen
+
 function fitScale(contentW) {
   const cs = getComputedStyle(stage);
-  const w = stage.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  const w = stage.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 2 * INSET;
   return Math.max(0.2, w / contentW) || 1;
 }
 
@@ -584,8 +586,8 @@ async function render(n, dir) {
   canvas.getContext("2d").drawImage(off, 0, 0);
   canvas.style.width = Math.floor(vp.width) + "px"; canvas.style.height = Math.floor(vp.height) + "px";
   innerEl.style.width = Math.floor(vp.width) + "px"; innerEl.style.height = Math.floor(vp.height) + "px";
-  innerEl.style.left = -box.x * scale + "px";
-  pageEl.style.width = Math.floor(box.w * scale) + "px"; pageEl.style.height = Math.floor(vp.height) + "px";
+  innerEl.style.left = (INSET - box.x * scale) + "px";
+  pageEl.style.width = Math.floor(Math.max(stage.clientWidth, box.w * scale + 2 * INSET)) + "px"; pageEl.style.height = Math.floor(vp.height) + "px";
   $("loading").hidden = true;
   if (changed && dir) {
     pageEl.classList.remove("turn-next", "turn-prev"); void pageEl.offsetWidth;
