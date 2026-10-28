@@ -712,9 +712,9 @@ function endPointer(e) {
   const sel = window.getSelection();
   if (sel && !sel.isCollapsed && String(sel).trim()) return;
   const touchLike = gg.type !== "mouse";
-  // swipe: left goes back a page, right goes forward
+  // swipe: left goes forward a page, right goes back
   if (touchLike && zoom === 1 && Math.abs(dx) > 60 && Math.abs(dx) > 1.5 * Math.abs(dy) && dt < 800) {
-    dx < 0 ? prev() : next();
+    dx < 0 ? next() : prev();
     return;
   }
   if (Math.hypot(dx, dy) > 8 || dt > 700 || zoom !== 1) return;
