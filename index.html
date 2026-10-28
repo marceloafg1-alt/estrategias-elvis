@@ -84,7 +84,8 @@ button, input, textarea { font: inherit; color: inherit; }
 .exitFull svg { width: 18px; height: 18px; }
 body.focus .top, body.focus .bottom { display: none; }
 body.focus .exitFull { display: grid; }
-body.focus .stage { padding-top: 12px; padding-bottom: 12px; }
+/* a strip above the page for the exit button, and about 2 mm of margin on each side */
+body.focus .stage { padding: 56px max(8px, env(safe-area-inset-right, 0px)) 12px max(8px, env(safe-area-inset-left, 0px)); }
 .seg { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: var(--surface-2); }
 .btn {
   border: 0; background: transparent; border-radius: 999px; height: 34px; min-width: 34px; padding: 0 12px;
