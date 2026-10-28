@@ -950,14 +950,6 @@ const IS_IOS = /iPhone|iPad|iPod/.test(UA) || (navigator.platform === "MacIntel"
 const IS_ANDROID = /Android/.test(UA);
 const IS_SAFARI = /Safari/.test(UA) && !/Chrome|CriOS|FxiOS|Edg/.test(UA);
 const IS_STANDALONE = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
-function installHint() {
-  if (IS_IOS) return IS_SAFARI
-    ? 'No iPhone, toque no botão Compartilhar (quadrado com seta para cima, na barra de baixo) e escolha "Adicionar à Tela de Início".'
-    : 'No iPhone, abra este link no Safari. Depois toque em Compartilhar e em "Adicionar à Tela de Início".';
-  if (IS_ANDROID) return 'No Chrome, toque nos três pontinhos (⋮) no canto superior e escolha "Instalar app" ou "Adicionar à tela inicial".';
-  if (IS_SAFARI) return 'No Mac, no Safari, escolha Arquivo e depois "Adicionar ao Dock".';
-  return 'No Chrome ou Edge, clique no ícone de instalar (uma tela com uma seta) na barra de endereço, ou em ⋮ e "Instalar Estratégias Elvis".';
-}
 let deferredInstall = null;
 const installBar = $("installBar");
 window.addEventListener("beforeinstallprompt", e => {
@@ -979,7 +971,9 @@ $("tourInstall").onclick = runInstall;
 $("installLater").onclick = () => { installBar.hidden = true; };
 
 const TOUR_STEPS = [
-  { sel: null, install: true, title: "Instale como app", text: "Assim o livro abre em tela cheia, como um aplicativo, e funciona sem internet. " + installHint() },
+  { sel: null, install: true, title: "Instale no Chrome (Android)", text: "Assim o livro abre em tela cheia, como um aplicativo, e funciona sem internet. Abra este link no Chrome, toque nos três pontinhos (⋮) no canto superior e escolha \"Instalar app\" ou \"Adicionar à tela inicial\"." },
+  { sel: null, title: "Instale no Safari (iPhone)", text: "Abra este link no Safari. Toque no botão Compartilhar (quadrado com seta para cima, na barra de baixo), role a lista e escolha \"Adicionar à Tela de Início\". Depois toque em Adicionar, no canto superior direito." },
+  { sel: null, title: "Instale no computador", text: "No Chrome ou no Edge, clique no ícone de instalar (uma tela com uma seta) na barra de endereço. No Safari do Mac, escolha Arquivo e depois \"Adicionar ao Dock\"." },
   { sel: "#page", title: "Vire as páginas", text: IS_TOUCH ? "Deslize o dedo para a direita para ir à próxima página e para a esquerda para voltar. Também dá para tocar nas laterais da página ou usar a barra inferior." : "Clique na metade direita da página para ir à próxima e na esquerda para voltar. Também funcionam as setas do teclado e a barra inferior." },
   { sel: "#page", title: "Amplie as imagens", text: "Toque em uma imagem do livro para vê-la em tela cheia. Use + e − para ampliar mais, toque na imagem para alternar o tamanho e feche com Fechar, Esc ou tocando fora dela." },
   { sel: "#stage", title: "Marque trechos", text: "Selecione um texto com o dedo ou o mouse. Uma barra de cores aparece embaixo: escolha a cor e o trecho fica marcado. Toque numa marcação para apagá-la." },
