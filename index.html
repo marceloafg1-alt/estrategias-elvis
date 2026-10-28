@@ -71,7 +71,7 @@ button, input, textarea { font: inherit; color: inherit; }
 }
 .title { display: flex; flex-direction: column; min-width: 0; margin-right: auto; }
 .top { flex-wrap: nowrap; }
-.title b { font-family: var(--font-serif); font-weight: 500; font-size: 16px; line-height: 1.15; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.title b { font-family: var(--font-serif); font-weight: 500; font-size: 16px; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .title span { font-size: 12px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tools { display: flex; align-items: center; gap: 6px; flex: none; }
 .iconBtn { min-width: 34px; width: 34px; padding: 0; }
@@ -86,7 +86,7 @@ button, input, textarea { font: inherit; color: inherit; }
 .btn.ghost { border: 1px solid var(--line); background: var(--surface); }
 .btn svg { width: 18px; height: 18px; flex: none; }
 .pct { font-family: var(--font-mono); font-size: 12px; min-width: 52px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
-@media (max-width: 620px) { .title span { display: none; } .top { gap: 8px; padding-inline: 10px; } .tools { gap: 4px; } .pct { min-width: 44px; font-size: 11.5px; } .seg .btn { padding: 0 6px; } }
+@media (max-width: 620px) { .title span { display: none; } .title b { font-size: 15px; } .top { gap: 8px; padding-inline: 10px; } .tools { gap: 4px; } .pct { min-width: 44px; font-size: 11.5px; } .seg .btn { padding: 0 6px; } }
 
 /* ---------- stage ---------- */
 .main { flex: 1; min-height: 0; position: relative; display: flex; overflow: hidden; }
@@ -101,6 +101,7 @@ button, input, textarea { font: inherit; color: inherit; }
   box-shadow: 0 1px 2px rgba(16, 24, 40, .12), 0 18px 46px var(--shadow);
 }
 .page canvas { display: block; }
+.pageInner { position: absolute; top: 0; }
 .page.turn-next { animation: turnNext .4s cubic-bezier(.2, .7, .2, 1); }
 .page.turn-prev { animation: turnPrev .4s cubic-bezier(.2, .7, .2, 1); }
 @keyframes turnNext { from { transform: perspective(1600px) rotateY(-14deg); opacity: .4; } to { transform: none; opacity: 1; } }
@@ -268,7 +269,7 @@ button, input, textarea { font: inherit; color: inherit; }
 <header class="top">
   <button class="btn ghost iconBtn" id="tocBtn" aria-label="Sumário" title="Sumário">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></button>
-  <div class="title"><b>Estratégias<br>Elvis</b><span>Caminho da consistência</span></div>
+  <div class="title"><b>Estratégias Elvis</b><span>Caminho da consistência</span></div>
   <div class="tools">
     <div class="seg" role="group" aria-label="Zoom">
       <button class="btn iconBtn" id="zOut" aria-label="Diminuir zoom" title="Diminuir zoom (−)">
@@ -288,9 +289,11 @@ button, input, textarea { font: inherit; color: inherit; }
   <div class="stage" id="stage">
     <div class="sheet">
       <div class="page" id="page">
-        <canvas id="canvas"></canvas>
-        <div class="marks" id="marks"></div>
-        <div class="textLayer" id="text"></div>
+        <div class="pageInner" id="inner">
+          <canvas id="canvas"></canvas>
+          <div class="marks" id="marks"></div>
+          <div class="textLayer" id="text"></div>
+        </div>
       </div>
     </div>
     <div class="loading" id="loading">Abrindo o livro…</div>
@@ -490,7 +493,7 @@ const pdfjs = window.pdfjsLib;
 if (!pdfjs) { $("loading").textContent = "Não foi possível carregar o leitor. Recarregue a página."; return; }
 pdfjs.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
-const stage = $("stage"), pageEl = $("page"), canvas = $("canvas"), textEl = $("text"), marksEl = $("marks");
+const stage = $("stage"), pageEl = $("page"), canvas = $("canvas"), textEl = $("text"), marksEl = $("marks"), innerEl = $("inner");
 let pdf = null, cur = clamp(+store.last || 1, 1, PAGES), zoom = 1, renderTask = null, renderSeq = 0;
 const textCache = {}, boxCache = {};
 
@@ -500,10 +503,22 @@ pdfjs.getDocument({ data: base64ToBytes(PDF_B64) }).promise.then(doc => {
   render(cur, 0);
 }).catch(() => { $("loading").textContent = "Não foi possível abrir o livro. Recarregue a página."; });
 
-function fitScale(base) {
+function fitScale(contentW) {
   const cs = getComputedStyle(stage);
   const w = stage.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-  return Math.max(0.2, w / base.width) || 1;
+  return Math.max(0.2, w / contentW) || 1;
+}
+
+/* The part of the page that has text or pictures, in page units, so the margins can be left out. */
+function contentBox(page, base, tc, boxes) {
+  const ox = page.view[0];
+  let x0 = Infinity, x1 = -Infinity;
+  for (const it of tc.items) {
+    if (!it.str || !it.str.trim()) continue;
+    x0 = Math.min(x0, it.transform[4] - ox); x1 = Math.max(x1, it.transform[4] - ox + it.width);
+  }
+  for (const b of boxes) { x0 = Math.min(x0, b.x0 * base.width); x1 = Math.max(x1, b.x1 * base.width); }
+  return x1 > x0 ? { x: x0, w: x1 - x0 } : { x: 0, w: base.width };
 }
 
 /* Image positions come from the page's drawing operations, as fractions of the page,
@@ -550,7 +565,11 @@ async function render(n, dir) {
   const page = await pdf.getPage(n);
   if (seq !== renderSeq) return;
   const base = page.getViewport({ scale: 1 });
-  const scale = fitScale(base) * zoom;
+  const tc = textCache[n] || (textCache[n] = await page.getTextContent());
+  boxCache[n] ||= await imageBoxes(page);
+  if (seq !== renderSeq) return;
+  const box = contentBox(page, base, tc, boxCache[n]);
+  const scale = fitScale(box.w) * zoom;
   const vp = page.getViewport({ scale });
   let ratio = window.devicePixelRatio || 1;
   const maxPx = 14e6;
@@ -564,7 +583,9 @@ async function render(n, dir) {
   canvas.width = off.width; canvas.height = off.height;
   canvas.getContext("2d").drawImage(off, 0, 0);
   canvas.style.width = Math.floor(vp.width) + "px"; canvas.style.height = Math.floor(vp.height) + "px";
-  pageEl.style.width = Math.floor(vp.width) + "px"; pageEl.style.height = Math.floor(vp.height) + "px";
+  innerEl.style.width = Math.floor(vp.width) + "px"; innerEl.style.height = Math.floor(vp.height) + "px";
+  innerEl.style.left = -box.x * scale + "px";
+  pageEl.style.width = Math.floor(box.w * scale) + "px"; pageEl.style.height = Math.floor(vp.height) + "px";
   $("loading").hidden = true;
   if (changed && dir) {
     pageEl.classList.remove("turn-next", "turn-prev"); void pageEl.offsetWidth;
@@ -573,12 +594,8 @@ async function render(n, dir) {
   if (changed) stage.scrollTo({ left: stage.scrollWidth, top: 0 });
   // text layer, for selecting and marking
   textEl.innerHTML = "";
-  const tc = textCache[n] || (textCache[n] = await page.getTextContent());
-  if (seq !== renderSeq) return;
   try { await pdfjs.renderTextLayer({ textContentSource: tc, container: textEl, viewport: vp, textDivs: [] }).promise; } catch (e) {}
   const end = document.createElement("div"); end.className = "endOfContent"; textEl.appendChild(end);
-  boxCache[n] ||= await imageBoxes(page);
-  if (seq !== renderSeq) return;
   drawMarks();
   // warm the next page so turning feels instant
   if (n < pdf.numPages && !textCache[n + 1]) pdf.getPage(n + 1).then(p => p.getTextContent()).then(t => { textCache[n + 1] = t; }).catch(() => {});
@@ -730,7 +747,7 @@ window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() =
 
 /* ---------- images ---------- */
 function imageAt(cx, cy) {
-  const r = pageEl.getBoundingClientRect();
+  const r = innerEl.getBoundingClientRect();
   if (!r.width) return null;
   const x = (cx - r.left) / r.width, y = (cy - r.top) / r.height;
   return (boxCache[cur] || []).find(b => x >= b.x0 && x <= b.x1 && y >= b.y0 && y <= b.y1) || null;
@@ -764,7 +781,7 @@ function lbZoom(s) { lbScale = clamp(s, 1, 3); lbApply(); }
 
 async function openLightbox(p, box) {
   const token = ++lbToken;
-  const pr = pageEl.getBoundingClientRect();
+  const pr = innerEl.getBoundingClientRect();
   const thumb = { w: (box.x1 - box.x0) * pr.width,
     cx: pr.left + ((box.x0 + box.x1) / 2) * pr.width, cy: pr.top + ((box.y0 + box.y1) / 2) * pr.height };
   lb.hidden = false; lbOpen = true; lbScale = 1; lbOpenedAt = Date.now();
@@ -818,7 +835,7 @@ function drawMarks() {
   }
 }
 function markAt(cx, cy) {
-  const r = pageEl.getBoundingClientRect();
+  const r = innerEl.getBoundingClientRect();
   const x = (cx - r.left) / r.width, y = (cy - r.top) / r.height;
   return pageData(cur).marks.find(m => m.rects.some(q => x >= q[0] && x <= q[0] + q[2] && y >= q[1] && y <= q[1] + q[3])) || null;
 }
@@ -829,7 +846,7 @@ function selectionRects() {
   if (!textEl.contains(range.commonAncestorContainer)) return null;
   const text = String(sel).replace(/\s+/g, " ").trim();
   if (!text) return null;
-  const pr = pageEl.getBoundingClientRect();
+  const pr = innerEl.getBoundingClientRect();
   const rects = [...range.getClientRects()]
     .filter(r => r.width > 1 && r.height > 1)
     .map(r => [(r.left - pr.left) / pr.width, (r.top - pr.top) / pr.height, r.width / pr.width, r.height / pr.height])
