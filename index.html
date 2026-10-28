@@ -504,10 +504,13 @@ pdfjs.getDocument({ data: base64ToBytes(PDF_B64) }).promise.then(doc => {
 }).catch(() => { $("loading").textContent = "Não foi possível abrir o livro. Recarregue a página."; });
 
 const INSET = 12; // about 2 mm between the text and the edge of the screen
+// On a computer the page keeps a width like a PDF page, with a wider margin around the text.
+const sideInset = () => (IS_TOUCH ? INSET : 48);
+const frameWidth = () => (IS_TOUCH ? stage.clientWidth : Math.min(stage.clientWidth, 820));
 
 function fitScale(contentW) {
   const cs = getComputedStyle(stage);
-  const w = stage.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 2 * INSET;
+  const w = frameWidth() - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 2 * sideInset();
   return Math.max(0.2, w / contentW) || 1;
 }
 
@@ -586,8 +589,8 @@ async function render(n, dir) {
   canvas.getContext("2d").drawImage(off, 0, 0);
   canvas.style.width = Math.floor(vp.width) + "px"; canvas.style.height = Math.floor(vp.height) + "px";
   innerEl.style.width = Math.floor(vp.width) + "px"; innerEl.style.height = Math.floor(vp.height) + "px";
-  innerEl.style.left = (INSET - box.x * scale) + "px";
-  pageEl.style.width = Math.floor(Math.max(stage.clientWidth, box.w * scale + 2 * INSET)) + "px"; pageEl.style.height = Math.floor(vp.height) + "px";
+  innerEl.style.left = (sideInset() - box.x * scale) + "px";
+  pageEl.style.width = Math.floor(Math.max(frameWidth(), box.w * scale + 2 * sideInset())) + "px"; pageEl.style.height = Math.floor(vp.height) + "px";
   $("loading").hidden = true;
   if (changed && dir) {
     pageEl.classList.remove("turn-next", "turn-prev"); void pageEl.offsetWidth;
