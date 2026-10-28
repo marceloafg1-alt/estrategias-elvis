@@ -153,7 +153,7 @@ button, input, textarea { font: inherit; color: inherit; }
 /* ---------- docked colour bar (appears above the bottom bar when text is selected) ---------- */
 .dock {
   position: fixed; z-index: 30; left: 50%; transform: translateX(-50%);
-  bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(140px + env(safe-area-inset-bottom, 0px));
   display: flex; align-items: center; gap: 2px; padding: 6px 8px;
   background: var(--surface); border: 1px solid var(--line); border-radius: 999px; box-shadow: 0 10px 30px var(--shadow);
   max-width: calc(100vw - 24px);
@@ -596,6 +596,7 @@ async function render(n, dir) {
   if (changed) stage.scrollTo({ left: stage.scrollWidth, top: 0 });
   // text layer, for selecting and marking
   textEl.innerHTML = "";
+  textEl.style.setProperty("--scale-factor", vp.scale);
   try { await pdfjs.renderTextLayer({ textContentSource: tc, container: textEl, viewport: vp, textDivs: [] }).promise; } catch (e) {}
   const end = document.createElement("div"); end.className = "endOfContent"; textEl.appendChild(end);
   drawMarks();
