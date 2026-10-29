@@ -86,7 +86,9 @@ button, input, textarea { font: inherit; color: inherit; }
 .btn.ghost { border: 1px solid var(--line); background: var(--surface); }
 .btn svg { width: 18px; height: 18px; flex: none; }
 .pct { font-family: var(--font-mono); font-size: 12px; min-width: 52px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
-@media (max-width: 620px) { .title span { display: none; } .title b { font-size: 15px; } .top { gap: 8px; padding-inline: 10px; } .tools { gap: 4px; } .pct { min-width: 44px; font-size: 11.5px; } .seg .btn { padding: 0 6px; } }
+@media (max-width: 620px) { .title span { display: none; } .title b { font-size: 15px; } .top { gap: 8px; padding-inline: 10px; } .tools { gap: 4px; } .pct { min-width: 44px; font-size: 11.5px; }
+.pct100 { height: 30px; min-width: 0; padding: 0 7px; font-size: 11px; font-family: var(--font-mono, monospace); }
+@media (max-width: 380px) { .title b { font-size: 14px; } .seg .btn { padding: 0 3px; } .seg .iconBtn { width: 30px; min-width: 30px; } .pct { min-width: 38px; } .pct100 { padding: 0 5px; } .tools .iconBtn { width: 32px; min-width: 32px; } } .seg .btn { padding: 0 6px; } }
 
 /* ---------- stage ---------- */
 .main { flex: 1; min-height: 0; position: relative; display: flex; overflow: hidden; }
@@ -278,6 +280,7 @@ button, input, textarea { font: inherit; color: inherit; }
       <button class="btn iconBtn" id="zIn" aria-label="Aumentar zoom" title="Aumentar zoom (+)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5v14"/></svg></button>
     </div>
+    <button class="btn ghost pct100" id="zReset" aria-label="Voltar a 100%" title="Voltar a 100%">100%</button>
     <button class="btn ghost iconBtn" id="tourBtn" aria-label="Guia de uso" title="Guia de uso">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><path d="M12 17.5h.01"/></svg></button>
     <button class="btn ghost iconBtn" id="marksBtn" aria-label="Marcações e notas" title="Marcações e notas">
@@ -648,6 +651,7 @@ function setZoom(z, anchor) {
   });
 }
 $("zIn").onclick = () => setZoom(zoom + 0.25);
+$("zReset").onclick = () => setZoom(1);
 $("zOut").onclick = () => setZoom(zoom - 0.25);
 $("zFit").onclick = () => setZoom(1);
 
@@ -1037,7 +1041,7 @@ const USAGE_STEPS = [
   { sel: "#marksBtn", title: "Notas e backup", text: "Em Marcações você escreve notas por página e vê todos os trechos marcados. Exporte um backup de vez em quando para não perder nada." },
   { sel: "#tocBtn", title: "Sumário", text: "Vá direto a qualquer capítulo pelo sumário." },
   { sel: "#zIn", title: "Zoom", text: IS_TOUCH ? "Use + e − ou aproxime dois dedos na tela para ampliar o texto." : "Use + e − ou segure Ctrl e role a roda do mouse para ampliar o texto." },
-  { sel: "#zFit", title: "Voltar a 100%", text: IS_TOUCH ? "Toque duas vezes na página, ou no número do zoom, para voltar ao tamanho normal de 100%." : "Clique duas vezes na página, ou no número do zoom, para voltar ao tamanho normal de 100%." }
+  { sel: "#zReset", title: "Voltar a 100%", text: IS_TOUCH ? "Toque duas vezes na página, ou no número do zoom, para voltar ao tamanho normal de 100%." : "Clique duas vezes na página, ou no número do zoom, para voltar ao tamanho normal de 100%." }
 ];
 // The first page of the tour teaches the install for this device; the other lessons follow it.
 const PLATFORM_LESSON = IS_IOS ? LESSON_SAFARI : IS_ANDROID ? LESSON_CHROME : LESSON_DESKTOP;
