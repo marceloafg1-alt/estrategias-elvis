@@ -707,9 +707,9 @@ function endPointer(e) {
   if (!gg || e.type === "pointercancel" || pts.size > 0 || Date.now() - pinchEnd < 350) return;
   const dx = e.clientX - gg.x, dy = e.clientY - gg.y, dt = Date.now() - gg.t;
   // two quick taps (or a double click) bring the zoom back to 100%
-  if (Math.hypot(dx, dy) <= 8 && dt <= 700) {
+  if (Math.hypot(dx, dy) <= 12 && dt <= 700) {
     const now = Date.now();
-    if (now - lastTap.t < 350 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 40) {
+    if (now - lastTap.t < 450 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 80) {
       lastTap.t = 0;
       if (zoom !== 1) setZoom(1);
       return;
@@ -1036,7 +1036,7 @@ const USAGE_STEPS = [
   { sel: "#stage", title: "Marque trechos", text: "Selecione um texto com o dedo ou o mouse. Uma barra de cores aparece embaixo: escolha a cor e o trecho fica marcado. Toque numa marcação para apagá-la." },
   { sel: "#marksBtn", title: "Notas e backup", text: "Em Marcações você escreve notas por página e vê todos os trechos marcados. Exporte um backup de vez em quando para não perder nada." },
   { sel: "#tocBtn", title: "Sumário", text: "Vá direto a qualquer capítulo pelo sumário." },
-  { sel: "#zIn", title: "Zoom", text: IS_TOUCH ? "Use + e − ou aproxime dois dedos na tela para ampliar o texto." : "Use + e − ou segure Ctrl e role a roda do mouse para ampliar o texto." }
+  { sel: "#zIn", title: "Zoom", text: IS_TOUCH ? "Use + e − ou aproxime dois dedos na tela para ampliar o texto. Toque duas vezes na página para voltar a 100%." : "Use + e − ou segure Ctrl e role a roda do mouse para ampliar o texto. Clique duas vezes na página para voltar a 100%." }
 ];
 // The first page of the tour teaches the install for this device; the other lessons follow it.
 const PLATFORM_LESSON = IS_IOS ? LESSON_SAFARI : IS_ANDROID ? LESSON_CHROME : LESSON_DESKTOP;
