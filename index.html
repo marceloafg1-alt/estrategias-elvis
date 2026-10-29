@@ -692,6 +692,7 @@ stage.addEventListener("pointermove", e => {
 document.addEventListener("pointerup", endPointer);
 document.addEventListener("pointercancel", endPointer);
 
+let lastTap = { t: 0, x: 0, y: 0 };
 function endPointer(e) {
   pts.delete(e.pointerId);
   if (pinching) {
@@ -705,6 +706,16 @@ function endPointer(e) {
   const gg = g; g = null;
   if (!gg || e.type === "pointercancel" || pts.size > 0 || Date.now() - pinchEnd < 350) return;
   const dx = e.clientX - gg.x, dy = e.clientY - gg.y, dt = Date.now() - gg.t;
+  // two quick taps (or a double click) bring the zoom back to 100%
+  if (Math.hypot(dx, dy) <= 8 && dt <= 700) {
+    const now = Date.now();
+    if (now - lastTap.t < 350 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 40) {
+      lastTap.t = 0;
+      if (zoom !== 1) setZoom(1);
+      return;
+    }
+    lastTap = { t: now, x: e.clientX, y: e.clientY };
+  }
   const sel = window.getSelection();
   if (sel && !sel.isCollapsed && String(sel).trim()) return;
   const touchLike = gg.type !== "mouse";
@@ -718,6 +729,7 @@ function endPointer(e) {
   if (hl) { showMarkPop(hl); return; }
   const r = stage.getBoundingClientRect();
   const fx = (e.clientX - r.left) / r.width;
+  if (zoom !== 1) return;
   if (fx < 0.35) prev(); else if (fx > 0.65) next();
 }
 
