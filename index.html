@@ -1056,7 +1056,7 @@ function tourShow(i) {
   tourIdx = clamp(i, 0, TOUR_STEPS.length - 1);
   const st = TOUR_STEPS[tourIdx];
   $("tourStep").textContent = "Passo " + (tourIdx + 1) + " de " + TOUR_STEPS.length;
-  $("tourInstall").hidden = !st.install;
+  $("tourInstall").hidden = !st.install || installedFlag;
   $("tourTitle").textContent = st.title;
   $("tourText").textContent = st.text;
   $("tourDots").innerHTML = TOUR_STEPS.map((_, k) => `<i class="${k === tourIdx ? "on" : ""}"></i>`).join("");
