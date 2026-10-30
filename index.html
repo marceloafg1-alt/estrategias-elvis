@@ -593,7 +593,7 @@ async function render(n, dir) {
   canvas.style.width = Math.floor(vp.width) + "px"; canvas.style.height = Math.floor(vp.height) + "px";
   innerEl.style.width = Math.floor(vp.width) + "px"; innerEl.style.height = Math.floor(vp.height) + "px";
   innerEl.style.left = (sideInset() - box.x * scale) + "px";
-  pageEl.style.width = Math.floor(Math.max(frameWidth(), box.w * scale + 2 * sideInset())) + "px"; pageEl.style.height = Math.floor(vp.height) + "px";
+  pageEl.style.width = Math.floor(box.w * scale + 2 * sideInset()) + "px"; pageEl.style.height = Math.floor(vp.height) + "px";
   $("loading").hidden = true;
   if (changed && dir) {
     pageEl.classList.remove("turn-next", "turn-prev"); void pageEl.offsetWidth;
@@ -1007,14 +1007,18 @@ const IS_ANDROID = /Android/.test(UA);
 const IS_SAFARI = /Safari/.test(UA) && !/Chrome|CriOS|FxiOS|Edg/.test(UA);
 const IS_STANDALONE = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
 let deferredInstall = null;
+// Once the app has run as an installed app, the install bar stays hidden everywhere.
+let installedFlag = false;
+try { installedFlag = IS_STANDALONE || localStorage.getItem("elvis-installed") === "1"; if (IS_STANDALONE) localStorage.setItem("elvis-installed", "1"); } catch (e) { installedFlag = IS_STANDALONE; }
+if (navigator.getInstalledRelatedApps) navigator.getInstalledRelatedApps().then(apps => { if (apps.length) { installedFlag = true; installBar.hidden = true; } }).catch(() => {});
 const installBar = $("installBar");
 window.addEventListener("beforeinstallprompt", e => {
   e.preventDefault();
   deferredInstall = e;
-  if (!IS_STANDALONE && !dismissedInstall) installBar.hidden = false;
+  if (!installedFlag && !dismissedInstall) installBar.hidden = false;
   if (!tour.hidden) tourShow(tourIdx);
 });
-window.addEventListener("appinstalled", () => { deferredInstall = null; installBar.hidden = true; toast("App instalado"); });
+window.addEventListener("appinstalled", () => { deferredInstall = null; installedFlag = true; try { localStorage.setItem("elvis-installed", "1"); } catch (e) {} installBar.hidden = true; toast("App instalado"); });
 async function runInstall() {
   if (!deferredInstall) return;
   deferredInstall.prompt();
@@ -1027,7 +1031,7 @@ $("tourInstall").onclick = () => (deferredInstall ? runInstall() : toast(IS_IOS 
 $("installLater").onclick = () => { installBar.hidden = true; dismissedInstall = true; try { localStorage.setItem("elvis-install-dismissed", "1"); } catch (e) {} };
 let dismissedInstall = false;
 try { dismissedInstall = localStorage.getItem("elvis-install-dismissed") === "1"; } catch (e) {}
-if (IS_IOS && !IS_STANDALONE && !dismissedInstall) {
+if (IS_IOS && !installedFlag && !dismissedInstall) {
   $("installHint").textContent = IS_SAFARI ? "Toque em Compartilhar e depois em \"Adicionar à Tela de Início\"." : "Abra este link no Safari para instalar.";
   installBar.hidden = false;
 }
